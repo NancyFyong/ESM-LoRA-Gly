@@ -47,7 +47,7 @@ bash scritps/get_N-GlycositeAltas_train_features.sh
 python main.py --mode=train --data_path=./data/N-GlycositeAltas --output_path=./checkpoints/N-GlyAltas_classifier.pkl
 ```
 
-### Predict  N-linked glycosylation sites of N-GlycositeAltas dataset:
+### Predict  N-linked glycosylation sites of N-GlycositeAltas dataset（sigle site）:
 ```
 bash scritps/get_N-GlycositeAltas_test_features.sh
 python predict.py --mode=test --data_path=./data/N-GlycositeAltas --ckpt_path=./checkpoints/N-GlyAltas_classifier.pkl 

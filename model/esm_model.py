@@ -1,4 +1,4 @@
-from transformers import EsmForSequenceClassification, EsmConfig
+from transformers import EsmForSequenceClassification, EsmForTokenClassification
 import torch
 from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
