@@ -89,7 +89,7 @@ def main():
                 print(f"Position: {position + 1:<4}, Residue: {amino_acid}, Prediction: {prediction}")
 
     if found_sites_count == 0:
-        logging.warning("No potential sites found for the specified type.")
+        logging.warning("No potential sites found for the protein")
 
 if __name__ == "__main__":
     main()
