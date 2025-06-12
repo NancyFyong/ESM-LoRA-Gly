@@ -24,12 +24,11 @@ import numpy as np
 parser = argparse.ArgumentParser(description='parser example')
 parser.add_argument('--model_name', default='facebook/esm2-3b', type=str, help='Path to the model')
 parser.add_argument('--stage', default='test', type=str, help='train or test')
-parser.add_argument('--train_dataset', default='/home/zyfeng/lighting/ref/dataset/O-linked/train.csv', type=str, help='Path to train dataset')
-parser.add_argument('--valid_dataset',default='',type=str,help='')
-parser.add_argument('--test_dataset', default='/home/zyfeng/lighting/ref/dataset/O-linked/im_test.csv', type=str, help='Path to validation dataset')
-parser.add_argument('--peft_model_path', default='./checkpoint/O-Esm3B-Output/checkpoint-5500', type=str, help='Path to PEFT model checkpoint')
+parser.add_argument('--train_dataset', default='./data/N-GlycositeAltas/train.csv', type=str, help='Path to train dataset')
+parser.add_argument('--valid_dataset',default='./data/N-GlycositeAltas/valid.csv',type=str,help='')
+parser.add_argument('--test_dataset', default='./data/N-GlycositeAltas/test.csv', type=str, help='Path to validation dataset')
+parser.add_argument('--peft_model_path', default='./checkpoints/N-linked/ESM-3B/checkpoint', type=str, help='Path to PEFT model checkpoint')
 parser.add_argument('--save_dir',default='./checkpoint')
-parser.add_argument('--results',default='./results')
 args = parser.parse_args()
 # 设置日志级别
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -156,4 +155,5 @@ else:
     peft_model = PeftModel.from_pretrained(model, args.peft_model_path)
     peft_lora_finetuning_trainer = get_trainer(peft_model)
     predictions = peft_lora_finetuning_trainer.predict(data_test)
-    print(predictions)
+    logging.info(predictions.metrics)
+

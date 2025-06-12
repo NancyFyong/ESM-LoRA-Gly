@@ -5,7 +5,7 @@
 ## Environments
 ```bash
 git clone https://github.com/NancyFyong/ESM-LoRA-Gly.git
-conda env create -f environment.yml
+conda env create -f env.yml
 ```
 
 ## Datasets
