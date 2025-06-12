@@ -1,76 +1,95 @@
 import torch
 import random
 import re
-import numpy as np # 建议导入numpy
+import numpy as np
+import argparse
+import logging
 from transformers import EsmTokenizer, EsmForTokenClassification
 from peft import PeftModel
-from logging import logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 def set_seed(seed: int = 42):
-    """
-    固定所有随机种子以确保结果的可复现性。
-    """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed) # if you are using multi-GPU.
-    
-    # 配置PyTorch使用确定性的CUDA算法
+    torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+
+def main():
+    parser = argparse.ArgumentParser(description="Predict N-linked or O-linked glycosylation sites using a fine-tuned ESM model.")
     
-    print(f"所有随机种子已固定为: {seed}")
-    print(f"PyTorch确定性算法已开启。")
+    parser.add_argument("--type", type=str, default='N', choices=['N', 'O'], 
+                        help="Type of prediction: 'N' for N-linked or 'O' for O-linked. Default: 'N'.")
+    
+    parser.add_argument("--base_model", type=str, default='facebook/esm2_t36_3B_UR50D', 
+                        help="Path or name of the base ESM model. Default: 'facebook/esm2_t36_3B_UR50D'.")
+    
+    parser.add_argument("--lora_model", type=str, default='./lora_checkpoint', 
+                        help="Path to the trained LoRA model checkpoint directory. Default: './lora_checkpoint'.")
+    
+    parser.add_argument("--sequence", type=str, default='MNSVTVSHAPYTITYAFTVTVN', 
+                        help="The amino acid sequence to predict on. Default: a short example sequence.")
 
-set_seed(42) 
+    args = parser.parse_args()
 
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    set_seed(42)
 
-base_model_name = "facebook/esm2_t36_3B_UR50D"
-lora_model_path = "/checkpoint"
+    if not args.sequence:
+        logging.error("Sequence cannot be empty!")
+        return
 
-sequence = ""
+    logging.info(f"Prediction Type: {args.type}")
+    logging.info(f"Using sequence: {args.sequence}")
 
+    logging.info(f"Loading base model: {args.base_model} ...")
+    base_model = EsmForTokenClassification.from_pretrained(args.base_model, num_labels=2, torch_dtype=torch.float16)
 
+    logging.info(f"Loading LoRA model from: {args.lora_model} ...")
+    model = PeftModel.from_pretrained(base_model, args.lora_model)
 
-# --- 加载模型和分词器 (不变) ---
-# ... (加载和合并模型的代码与之前完全相同)
-print(f"1. 正在加载基础模型: {base_model_name}")
-base_model = EsmForTokenClassification.from_pretrained(base_model_name, num_labels=2, torch_dtype=torch.float16)
-print(f"2. 正在从 '{lora_model_path}' 加载并附加LoRA权重...")
-model = PeftModel.from_pretrained(base_model, lora_model_path)
-print("3. 正在合并LoRA权重以提高推理速度...")
-model = model.merge_and_unload()
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
-print(f"模型已移动到: {device}\n")
-tokenizer = EsmTokenizer.from_pretrained(base_model_name)
+    logging.info("Merging LoRA weights into the base model ...")
+    model = model.merge_and_unload()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    tokenizer = EsmTokenizer.from_pretrained(args.base_model)
+    logging.info(f"Model successfully loaded and moved to: {device}")
 
+    inputs = tokenizer(args.sequence, return_tensors="pt")
+    inputs = {key: val.to(device) for key, val in inputs.items()}
 
-# --- 预测 ---
-inputs = tokenizer(sequence, return_tensors="pt")
-inputs = {key: val.to(device) for key, val in inputs.items()}
+    model.eval()
+    logging.info("Predicting ...")
+    with torch.no_grad():
+        outputs = model(**inputs)
+    logits = outputs.logits
+    logging.info("Prediction finished.")
 
-# ####################################################################
-#  ↓↓↓ 步骤2: 确保模型处于评估模式 (您的代码已正确执行) ↓↓↓
-# ####################################################################
-model.eval() 
+    predicted_class_ids = torch.argmax(logits, dim=-1).cpu().numpy()[0]
+    predictions_for_sequence = predicted_class_ids[1:-1]
 
-logging.info("正在进行预测 (使用您微调后的LoRA模型)...")
-with torch.no_grad():
-    outputs = model(**inputs)
-logits = outputs.logits
-print("预测完成！\n")
+    found_sites_count = 0
+    if args.type == 'N':
+        logging.info("Filtering for N-linked sites (N[^P][ST])...")
+        sequon_pattern = r"N[^P][ST]"
+        for match in re.finditer(sequon_pattern, args.sequence):
+            found_sites_count += 1
+            position = match.start()
+            motif = match.group()
+            prediction = predictions_for_sequence[position]
+            print(f"Position: {position + 1:<4}, Motif: {motif}, Prediction: {prediction}")
+    
+    elif args.type == 'O':
+        logging.info("Filtering for O-linked sites (S or T)...")
+        for i, amino_acid in enumerate(args.sequence):
+            if amino_acid in ['S', 'T']:
+                found_sites_count += 1
+                position = i
+                prediction = predictions_for_sequence[position]
+                print(f"Position: {position + 1:<4}, Residue: {amino_acid}, Prediction: {prediction}")
 
-predicted_class_ids = torch.argmax(logits, dim=-1).cpu().numpy()[0]
-predictions_for_sequence = predicted_class_ids[1:-1]
-sequon_pattern = r"N[^P][ST]"
+    if found_sites_count == 0:
+        logging.warning("No potential sites found for the specified type.")
 
-found_sites_count = 0
-for match in re.finditer(sequon_pattern, sequence):
-    found_sites_count += 1
-    position = match.start()
-    motif = match.group()
-    prediction = predictions_for_sequence[position]
-    print(f"发现位点: 位置 {position + 1:<4}, 基序: {motif}, 预测类别: {prediction}")
-if found_sites_count == 0:
-    print("在输入序列中未发现任何 'N-X-[S/T] (X≠P)' 模式的位点。")
+if __name__ == "__main__":
+    main()
