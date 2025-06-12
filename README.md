@@ -25,30 +25,35 @@ conda env create -f env.yml
 
 ## Usage
 
-### Quick predict N-linked glycosylation sites of N-GlycositeAltas dataset:
-Download the [checkpoint](https://drive.google.com/drive/folders/1cCCIw5HIgtBylf2oVFgSEaVNE1LGAN4g?usp=sharing) of N-GlyAltas_classifier under folder `checkpoints/`:
+### Quick predict glycosylation sites of N-GlycositeAltas dataset and O-linked dataset:
+put checkpoints under folder `checkpoints/`:
 
     ├── checkpoints
-    │       └── N-GlyAltas_classifier.pkl
+    │       └── N-linked
+    │             └──ESM-3B
+    |             └──ESM-150M
+    │       └── O-linked
+    │             └──ESM-3B
     ├── data
-    ├── log
     ├── model
     ├── scripts
     ├── main.py
     ├── predict.py
 
+
+
+### Train the classifier of ESM-LoRA-Gly on N-GlycositeAltas dataset:
 ```
-python predict.py --mode=test_features --data_path=./data/N-GlycositeAltas --ckpt_path=./checkpoints/N-GlyAltas_classifier.pkl 
+bash scripts/train.sh
 ```
 
-### Train the classifier of EMNgly on N-GlycositeAltas dataset:
+### eval  N-linked glycosylation sites of N-GlycositeAltas dataset（sigle site）:
 ```
-bash scritps/get_N-GlycositeAltas_train_features.sh
-python main.py --mode=train --data_path=./data/N-GlycositeAltas --output_path=./checkpoints/N-GlyAltas_classifier.pkl
+bash scritps/test.sh
 ```
 
-### Predict  N-linked glycosylation sites of N-GlycositeAltas dataset（sigle site）:
+### predict  N-linked glycosylation sites(sigle protein):
 ```
-bash scritps/get_N-GlycositeAltas_test_features.sh
-python predict.py --mode=test --data_path=./data/N-GlycositeAltas --ckpt_path=./checkpoints/N-GlyAltas_classifier.pkl 
+python inference.py
 ```
+
