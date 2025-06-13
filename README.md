@@ -1,6 +1,13 @@
 # ESM-LoRA-Gly: Improved prediction of N and O-linked glycosylation sites by tuning protein language models with low-rank adaptation (LoRA)
 
-**Zhiyong Feng** <sup>1,2</sup>, Xing Zhang1, He Wang1, Xue Hong1, Jian Zhan1,3, and Yaoqi Zhou<sup>∗</sup>
+**Zhiyong Feng** <sup>1,2</sup>, Xing Zhang<sup>2</sup>, He Wang<sup>2</sup>, Xue Hong<sup>2</sup>, Jian Zhan<sup>2,3</sup>, and Yaoqi Zhou<sup>2∗</sup>
+
+
+## Introduction
+
+![framework](./intro/framework.jpg "framework")
+
+**Figure 1:** (A) The overall architecture of our model: Generating embedding from ESM-2 with an input of query protein sequence, followed by utilizing the Low-rank adapters (LoRA) encoder to train an MLP for prediction of glycosylation sites. (B) The detailed architecture for training the LoRA encoder, $W_q$, $W_k$, $W_v$ are the parameters of the ESM2 encoder attention layer query, key, and value, and $W_o$ is the output layer of the encoder. LoRA refines $W_q$, $W_k$, $W_v$ by decomposing the changes $\Delta W$ as the multiplication product of two matrices $A$ and $B$ of lower rank $r(\Delta W = AB)$ and minimizing $A$ and $B$ with fewer parameters.
 
 ## Environments
 ```bash
