@@ -1,6 +1,6 @@
 # ESM-LoRA-Gly: Improved prediction of N and O-linked glycosylation sites by tuning protein language models with low-rank adaptation (LoRA)
 
-**Zhiyong Feng** <sup>1,2</sup>, Xing Zhang<sup>2</sup>, He Wang<sup>2</sup>, Xue Hong<sup>2</sup>, Jian Zhan<sup>2,3</sup>, and Yaoqi Zhou<sup>2∗</sup>
+**Zhiyong Feng** <sup>1,2</sup>, Xing Zhang<sup>2</sup>, He Wang<sup>2</sup>, Xu Hong<sup>2</sup>, Jian Zhan<sup>2,3</sup>, and Yaoqi Zhou<sup>2</sup>
 
 
 ## Introduction
